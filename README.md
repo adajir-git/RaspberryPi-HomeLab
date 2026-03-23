@@ -128,6 +128,9 @@ cp .env.example .env
 
 **3. Deploy stacks**
 ```bash
+# Create the shared Docker network first
+docker network create monitor-net
+
 # Deploy the proxy/tunnel stack first
 docker compose -f docker-compose/proxy-stack.yml up -d
 
