@@ -1,0 +1,20 @@
+# Node B (Raspberry Pi 2 Model B) — Watchdog
+# Deploy independently from Node A
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: always
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime-kuma:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "extra/healthcheck"]
+      interval: 60s
+      timeout: 30s
+      start_period: 180s
+      retries: 5
+
+volumes:
+  uptime-kuma:

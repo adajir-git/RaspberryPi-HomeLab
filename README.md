@@ -63,7 +63,6 @@ All services run in Docker containers, managed via **Portainer CE**. Stacks are 
 | **Identity** | `gitea` | Private Git server backed by SQLite3 |
 | **Monitoring** | `prometheus`, `grafana` | Metrics collection, alerting, and visualization |
 | **Gaming** | `mc-server` | PaperMC Minecraft server tuned with Aikar's JVM flags |
-| **Watchdog** | `uptime-kuma` | Independent service health monitoring (runs on Node B) |
 
 ---
 
@@ -130,13 +129,14 @@ cp .env.example .env
 docker compose -f docker-compose/proxy-stack.yml up -d
 
 # Then deploy remaining stacks
-docker compose -f docker-compose/identity-stack.yml up -d
+docker compose -f docker-compose/gitea-stack.yml up -d
 docker compose -f docker-compose/monitoring-stack.yml up -d
-docker compose -f docker-compose/gaming-stack.yml up -d
+docker compose -f docker-compose/minecraft-stack.yml up -d
 ```
 
-**4. (Node B only) Deploy the watchdog**
+**4. Configure Node B**
 ```bash
+# (Node B only) Deploy the watchdog
 docker compose -f docker-compose/watchdog-stack.yml up -d
 ```
 
@@ -145,19 +145,12 @@ docker compose -f docker-compose/watchdog-stack.yml up -d
 ## 📁 Repository Structure
 
 ```
-rpi_homelab/
 ├── docker-compose/          # Per-stack Compose files
 │   ├── proxy-stack.yml
-│   ├── identity-stack.yml
+│   ├── gitea-stack.yml
 │   ├── monitoring-stack.yml
-│   ├── gaming-stack.yml
+│   ├── minecraft-stack.yml
 │   └── watchdog-stack.yml
-├── configs/
-│   └── monitoring/          # Grafana dashboards & Prometheus config
-├── scripts/                 # Custom node_exporter textfile scripts
-├── crontab.txt              # Backup and heartbeat cron jobs
-├── .env.example             # Environment variable template
-└── README.md
 ```
 
 ---
