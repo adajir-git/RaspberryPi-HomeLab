@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  tunnel:
+    container_name: cloudflare-tunnel
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TOKEN}
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: filebrowser
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - /mnt/data:/srv
+      - fb_config:/database
+    environment:
+      - FB_DATABASE=/database/filebrowser.db
+
+volumes:
+  fb_config:

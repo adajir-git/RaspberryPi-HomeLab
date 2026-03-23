@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  mc-server:
+    image: itzg/minecraft-server:latest
+    container_name: mc-server
+    tty: true
+    stdin_open: true
+    restart: unless-stopped
+    ports:
+      - "25565:25565"
+      - "8081:8080"
+      - "9225:9225"
+      - "25575:25575"
+    environment:
+      - EULA=TRUE
+      - TYPE=PAPER
+      - VERSION=LATEST
+      - MEMORY=4G
+      - TZ=Europe/Prague
+      - ONLINE_MODE=FALSE
+      - USE_AIKAR_FLAGS=true
+      - ENABLE_QUERY=TRUE
+      - JVM_OPTS=-XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:MaxGCPauseMillis=100 -XX:+DisableExplicitGC -XX:TargetSurvivorRatio=90 -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:+AlwaysPreTouch -javaagent:/data/jmx_prometheus_javaagent-1.5.0.jar=8080:/data/config.yaml
+    volumes:
+      - /mnt/data/minecraft:/data
+
+networks:
+  default:
+    name: monitor-net
+    external: true

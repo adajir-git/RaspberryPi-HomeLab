@@ -1,0 +1,199 @@
+# 🍓 Raspberry Pi Home Lab
+
+> A dual-node Linux infrastructure built around automation, observability, and Zero Trust security.
+
+[![Platform](https://img.shields.io/badge/Platform-Raspberry%20Pi-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
+[![Docker](https://img.shields.io/badge/Container-Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Tailscale](https://img.shields.io/badge/VPN-Tailscale-242424?style=flat-square&logo=tailscale&logoColor=white)](https://tailscale.com/)
+[![Cloudflare](https://img.shields.io/badge/Tunnel-Cloudflare-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://www.cloudflare.com/)
+[![Grafana](https://img.shields.io/badge/Monitoring-Grafana-F46800?style=flat-square&logo=grafana&logoColor=white)](https://grafana.com/)
+[![Prometheus](https://img.shields.io/badge/Metrics-Prometheus-E6522C?style=flat-square&logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![Gitea](https://img.shields.io/badge/Git-Gitea-609926?style=flat-square&logo=gitea&logoColor=white)](https://gitea.io/)
+[![Portainer](https://img.shields.io/badge/Containers-Portainer-13BEF9?style=flat-square&logo=portainer&logoColor=white)](https://www.portainer.io/)
+[![Minecraft](https://img.shields.io/badge/Game-PaperMC-4A9C45?style=flat-square&logo=minecraft&logoColor=white)](https://papermc.io/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+
+---
+
+## 📖 Overview
+
+This project documents a self-hosted, containerized home lab running on two Raspberry Pi nodes. It hosts a private Git server, personal cloud storage, and a Minecraft server — all secured without exposing a single port to the public internet.
+
+Key design goals:
+- **Zero Trust** — no open ports, all external access via Cloudflare Tunnels + OTP authentication
+- **Observability** — custom Prometheus exporters and Grafana dashboards for hardware, security, and game analytics
+- **Resilience** — independent watchdog node and a 3-2-1 automated backup strategy
+
+---
+
+## 🖥️ Hardware Architecture
+
+The lab uses a two-node topology for service isolation and independent monitoring (Watchdog pattern).
+
+| | Node A — Primary | Node B — Watchdog |
+|---|---|---|
+| **Model** | Raspberry Pi 5 | Raspberry Pi 2 Model B |
+| **RAM** | 8 GB | 1 GB |
+| **Storage** | 100 GB SSD (USB 3.0) | SD Card |
+| **Cooling** | Active (fan) | Passive |
+| **Role** | High-performance apps, primary data, monitoring hub | Lightweight critical services, independent health checks |
+| **Network** | Tailscale Mesh VPN | Tailscale Mesh VPN |
+
+---
+
+## 🔐 Networking & Security
+
+The lab follows **Zero Trust principles** — no traditional port forwarding required.
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **External Access** | Cloudflare Tunnels (`cloudflared`) | Secure, encrypted ingress without open ports |
+| **Authentication** | Cloudflare Zero Trust Access (OTP) | One-Time PIN email verification for all public-facing services |
+| **Management** | Tailscale (WireGuard-based Mesh VPN) | Peer-to-peer node administration and private overlay network |
+
+---
+
+## 🐳 Containerized Services
+
+All services run in Docker containers, managed via **Portainer CE**. Stacks are defined as individual `docker-compose` files for modularity.
+
+| Stack | Services | Description |
+|:---|:---|:---|
+| **Core & Proxy** | `cloudflared`, `filebrowser` | Secure tunnel ingress and web-based file management |
+| **Identity** | `gitea` | Private Git server backed by SQLite3 |
+| **Monitoring** | `prometheus`, `grafana` | Metrics collection, alerting, and visualization |
+| **Gaming** | `mc-server` | PaperMC Minecraft server tuned with Aikar's JVM flags |
+| **Watchdog** | `uptime-kuma` | Independent service health monitoring (runs on Node B) |
+
+---
+
+## 📊 Monitoring & Observability
+
+The monitoring stack uses a **hybrid approach** — standard Prometheus exporters combined with custom Bash scripts integrated via the `node_exporter` textfile collector.
+
+### Collected Metrics
+
+| Category | What's Tracked |
+|---|---|
+| **Hardware Health** | SoC temperature, CPU throttling status (bitmask decoding) |
+| **Security Audit** | Failed SSH login attempts (parsed from `systemd` journal) |
+| **System Integrity** | Active Docker container count, system load average |
+| **Game Analytics** | Minecraft TPS, JVM heap memory, loaded chunks |
+
+> 📁 Grafana dashboards and Prometheus configuration files are located in `configs/monitoring/`.
+
+---
+
+## 💾 Backup Strategy (3-2-1 Rule)
+
+Data durability is ensured through **automated daily operations** (see `crontab.txt`).
+
+```
+[SSD] ──rsync──► [SD Card]        # Copy 1 — Local primary
+[SSD] ──tar.gz──► [SD Card]       # Copy 2 — Local archive (7-day retention)
+[SSD] ──rclone──► [Google Drive]  # Copy 3 — Off-site, encrypted
+```
+
+- **Local (Primary):** Daily `rsync` from SSD to a local SD card partition.
+- **Local (Archive):** Periodic `.tar.gz` compression with a 7-day retention policy.
+- **Off-site (Cloud):** Encrypted sync to Google Drive via `rclone` with `--tpslimit` to respect API rate limits.
+
+After each backup run, a **monitoring heartbeat** is triggered to confirm backup state visibility in Grafana.
+
+---
+
+## 🚀 Setup & Deployment
+
+### Prerequisites
+
+- Docker & Docker Compose installed on both nodes
+- Tailscale account and auth keys
+- Cloudflare account with a domain and Tunnel token
+
+### Steps
+
+**1. Clone the repository**
+```bash
+git clone https://github.com/your-username/rpi_homelab.git
+cd rpi_homelab
+```
+
+**2. Configure environment variables**
+```bash
+cp .env.example .env
+# Edit .env and fill in your Cloudflare tokens, Tailscale keys, and rclone config
+```
+
+**3. Deploy stacks**
+```bash
+# Deploy the proxy/tunnel stack first
+docker compose -f docker-compose/proxy-stack.yml up -d
+
+# Then deploy remaining stacks
+docker compose -f docker-compose/identity-stack.yml up -d
+docker compose -f docker-compose/monitoring-stack.yml up -d
+docker compose -f docker-compose/gaming-stack.yml up -d
+```
+
+**4. (Node B only) Deploy the watchdog**
+```bash
+docker compose -f docker-compose/watchdog-stack.yml up -d
+```
+
+---
+
+## 📁 Repository Structure
+
+```
+rpi_homelab/
+├── docker-compose/          # Per-stack Compose files
+│   ├── proxy-stack.yml
+│   ├── identity-stack.yml
+│   ├── monitoring-stack.yml
+│   ├── gaming-stack.yml
+│   └── watchdog-stack.yml
+├── configs/
+│   └── monitoring/          # Grafana dashboards & Prometheus config
+├── scripts/                 # Custom node_exporter textfile scripts
+├── crontab.txt              # Backup and heartbeat cron jobs
+├── .env.example             # Environment variable template
+└── README.md
+```
+
+---
+
+## 🗺️ Architecture Overview
+
+```
+                        ┌─────────────────────────────────┐
+  Internet              │         Cloudflare Edge          │
+  User ───────────────► │  Tunnel + Zero Trust Access(OTP) │
+                        └────────────────┬────────────────┘
+                                         │ (encrypted tunnel)
+                        ┌────────────────▼────────────────┐
+                        │         Node A — Primary         │
+                        │         Raspberry Pi 5           │
+                        │                                  │
+                        │  ┌──────────┐  ┌─────────────┐  │
+                        │  │  Gitea   │  │  Grafana +  │  │
+                        │  │  Files   │  │  Prometheus │  │
+                        │  └──────────┘  └─────────────┘  │
+                        │  ┌──────────┐  ┌─────────────┐  │
+                        │  │  MC Srv  │  │ cloudflared │  │
+                        │  └──────────┘  └─────────────┘  │
+                        └────────────────┬────────────────┘
+                                         │ Tailscale VPN
+                        ┌────────────────▼────────────────┐
+                        │         Node B — Watchdog        │
+                        │       Raspberry Pi 2 Model B     │
+                        │                                  │
+                        │       ┌───────────────┐          │
+                        │       │  Uptime Kuma  │          │
+                        │       │ (independent) │          │
+                        │       └───────────────┘          │
+                        └─────────────────────────────────┘
+```
+
+---
+
+*Maintained as a personal project for systems administration and infrastructure-as-code study.*

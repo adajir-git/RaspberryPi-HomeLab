@@ -1,0 +1,11 @@
+0 3 * * * /usr/local/bin/backup_script.sh && /usr/local/bin/cloud_upload.sh >> /home/adajir/backup_dir/backup.log 2>&1
+    
+0 */6 * * * /usr/local/bin/check_updates.sh
+
+5 * * * * /usr/local/bin/world_size.sh
+     
+* * * * * /usr/local/bin/rpi_hw_monitor.sh
+        
+* * * * * /usr/local/bin/docker_check.sh
+        
+*/5 * * * * /usr/local/bin/ssh_monitor.sh
