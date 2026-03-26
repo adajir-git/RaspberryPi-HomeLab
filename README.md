@@ -93,12 +93,12 @@ Data durability is ensured through **automated daily operations** (see `crontab.
 ```
 [SSD] ──rsync──► [SD Card]        # Copy 1 — Local primary
 [SSD] ──tar.gz──► [SD Card]       # Copy 2 — Local archive (7-day retention)
-[SSD] ──rclone──► [Google Drive]  # Copy 3 — Off-site, encrypted
+[SSD] ──rclone──► [Google Drive]  # Copy 3 — Off-site, encrypted, API key
 ```
 
 - **Local (Primary):** Daily `rsync` from SSD to a local SD card partition.
 - **Local (Archive):** Periodic `.tar.gz` compression with a 7-day retention policy.
-- **Off-site (Cloud):** Encrypted sync to Google Drive via `rclone` with `--tpslimit` to respect API rate limits.
+- **Off-site (Cloud):** Encrypted sync to Google Drive via `rclone` with `--tpslimit` to respect API rate limits using API key.
 
 After each backup run, a **monitoring heartbeat** is triggered to confirm backup state visibility in Grafana.
 
