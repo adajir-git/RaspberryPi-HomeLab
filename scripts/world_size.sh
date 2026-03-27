@@ -1,15 +1,12 @@
 #!/bin/bash
 
-# --- Configuration ---
-# Adjust the path if your Minecraft world is stored elsewhere
-WORLD_PATH="/mnt/data/minecraft/world"
-METRICS_FILE="/var/lib/node_exporter/textfile_collector/world_size.prom"
+# Změří velikost složek world v bajtech
+SIZE=$(du -sb /mnt/data/minecraft/world | cut -f1)
+SIZE_nether=$(du -sb /mnt/data/minecraft/world_nether | cut -f1)
+SIZE_end=$(du -sb /mnt/data/minecraft/world_the_end | cut -f1)
 
-# --- Storage Monitoring ---
+# Sečte velikosti dohromady
+FULL_SIZE=$(($SIZE + $SIZE_nether + $SIZE_end))
 
-# Measure the size of the world folder in bytes.
-# -s: summary, -b: apparent size in bytes.
-WORLD_SIZE_BYTES=$(du -sb "$WORLD_PATH" | cut -f1)
-
-# --- Export Metrics ---
-echo "minecraft_world_size_bytes $WORLD_SIZE_BYTES" > "$METRICS_FILE"
+# Zapíše výsledek do Prometheus souboru
+echo "minecraft_world_size_bytes $FULL_SIZE" > /var/lib/node_exporter/textfile_collector/world_size.prom
