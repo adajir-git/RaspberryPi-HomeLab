@@ -1,6 +1,7 @@
 #!/bin/bash
 # Název tvého kontejneru v Portaineru je mc-server
 CONTAINER="mc-server"
+LOG_FILE="/home/adajir/logs/restart.log"
 
 # 1. Varování minutu předem
 docker exec $CONTAINER rcon-cli say [UDRZBA] Server se za 60 sekund restartuje!
@@ -17,3 +18,5 @@ sleep 10
 # 4. Bezpečné uložení a vypnutí
 docker exec $CONTAINER rcon-cli save-all
 docker exec $CONTAINER rcon-cli stop
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Server uspesne ulozen a restartovan." >> "$LOG_FILE"
