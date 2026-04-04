@@ -13,7 +13,16 @@ sleep 20
 
 # 3. Poslední odpočet
 docker exec $CONTAINER rcon-cli say [UDRZBA] Restart za 10 sekund...
-sleep 10
+sleep 7
+
+docker exec $CONTAINER rcon-cli say [UDRZBA] Restart za 3 sekundy!!!
+sleep 1
+
+docker exec $CONTAINER rcon-cli say [UDRZBA] Restart za 2 sekundy!!!
+sleep 1
+
+docker exec $CONTAINER rcon-cli say [UDRZBA] Restart za 1 sekundu!!!
+sleep 1
 
 # 4. Bezpečné uložení a vypnutí
 docker exec $CONTAINER rcon-cli save-all
